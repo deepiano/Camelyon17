@@ -6,6 +6,17 @@ from openslide import OpenSlide
 from matplotlib import pyplot as plt
 from xml.etree.ElementTree import parse
 
+def get_level_scale_from_file_path(file_path, level):
+
+    wsi_tif = OpenSlide(file_path)
+    level_scale_width = \
+            wsi_tif.level_dimensions[level][0] / float(wsi_tif.dimensions[0])
+    level_scale_height = \
+            wsi_tif.level_dimensions[level][1] / float(wsi_tif.dimensions[1]) 
+    level_scale = (level_scale_width, level_scale_height)
+
+    return level_scale
+
 
 def load_WSI_from_tif_file_path(file_path, level):
     
@@ -53,6 +64,9 @@ def tissue_region_segmentation(file_path, level):
     wsi_gray = convert_wsi_bgr_to_wsi_gray(wsi_bgr)
     wsi_bin_uint8 = get_otsu_thresholding_image(wsi_gray)
 
+    return wsi_bin_uint8
+
+
 def find_and_draw_contours_of_tissue_region(wsi_bin):
     
     wsi_with_contours, contours, hierarchy = \
@@ -79,9 +93,17 @@ def find_contours_of_xml_label(file_path_xml, level_scale):
                         p_y = p_y * level_scale[1]
                         list_point.append([p_x, p_y])
                     if len(list_point):
-                        list_blob.append(list_point)
+                        list_blob.append(np.array(list_point, dtype=np.int32))
 
-    return list_blob
+    contours = []
+    for list_point in list_blob:
+        list_point_int = [[int(round(point[0])), int(round(point[1]))] \
+                            for point in list_point]
+        contour = np.array(list_point_int, dtype=np.int32)
+        contours.append(contour)
+
+
+    return contours 
                     
 
 def draw_contours_of_label_on_wsi(wsi_bin, contours_label):
@@ -112,35 +134,41 @@ def test():
     file_path = "./data/patient_099_node_4.tif"
     file_path_xml = "./data/patient_099_node_4.xml"
     level = 4
-    wsi_tif = OpenSlide(file_path)
-    level_scale_width = \
-            wsi_tif.level_dimensions[level][0] / float(wsi_tif.dimensions[0])
-    level_scale_height = \
-            wsi_tif.level_dimensions[level][1] / float(wsi_tif.dimensions[1]) 
-    print (level_scale_width, level_scale_height)
-    level_scale = (level_scale_width, level_scale_height)
+    level_scale = get_level_scale_from_file_path(file_path, level)
 
     wsi_pil = load_WSI_from_tif_file_path(file_path, level)
     wsi_bgr = convert_wsi_pil_to_wsi_bgr(wsi_pil)
     wsi_gray = convert_wsi_bgr_to_wsi_gray(wsi_bgr)
     wsi_bin_uint8 = get_otsu_thresholding_image(wsi_gray)
-    wsi_with_contours, contours = find_and_draw_contours_of_tissue_region(wsi_bin_uint8) 
+    _, contours = find_and_draw_contours_of_tissue_region(wsi_bin_uint8) 
+    wsi_with_contours = wsi_bgr.copy() 
+    cv2.drawContours(wsi_with_contours, contours, -1, (0,255,0), 3)
 
-    find_contours_of_xml_label(file_path_xml, level_scale)
+    wsi_with_label_contours = wsi_bgr.copy()
+    contours_label = find_contours_of_xml_label(file_path_xml, level_scale)
 
-    plt.subplot(1, 4, 1), plt.imshow(wsi_bgr)
+    print(contours[0].shape)
+    print(contours_label[0].shape)
+     
+    cv2.drawContours(wsi_with_label_contours, contours_label, -1, (0,255,0), 3)
+
+    plt.subplot(2, 3, 1), plt.imshow(wsi_bgr)
     plt.title("wsi_bgr"), plt.xticks([]), plt.yticks([])
     
-    plt.subplot(1, 4, 2), plt.imshow(wsi_gray, 'gray')
+    plt.subplot(2, 3, 2), plt.imshow(wsi_gray, 'gray')
     plt.title("wsi_gray"), plt.xticks([]), plt.yticks([])
 
-    plt.subplot(1, 4, 3), plt.imshow(wsi_bin_uint8, 'gray')
+    plt.subplot(2, 3, 3), plt.imshow(wsi_bin_uint8, 'gray')
     plt.title("wsi_bin"), plt.xticks([]), plt.yticks([])
 
-    plt.subplot(1, 4, 4), plt.imshow(wsi_with_contours)
+    plt.subplot(2, 3, 4), plt.imshow(wsi_with_contours)
     plt.title("wsi_contours"), plt.xticks([]), plt.yticks([])
 
+    plt.subplot(2, 3, 5), plt.imshow(wsi_with_label_contours)
+    plt.title("wsi_label_contours"), plt.xticks([]), plt.yticks([])
+
     plt.show()
+
     #cv2.imshow("wsi_bin", wsi_bin)
     #cv2.waitKey()
     #cv2.destroyAllWindows()
