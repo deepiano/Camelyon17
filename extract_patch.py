@@ -1,12 +1,13 @@
 import cv2
 import numpy as np
+import math
 
 from skimage.filters import threshold_otsu
 from openslide import OpenSlide
 from matplotlib import pyplot as plt
 from xml.etree.ElementTree import parse
 
-def get_level_scale_from_file_path(file_path, level):
+def get_level_scale_from_file_path_tif(file_path, level):
 
     wsi_tif = OpenSlide(file_path)
     level_scale_width = \
@@ -77,6 +78,7 @@ def find_and_draw_contours_of_tissue_region(wsi_bin):
 
     return wsi_with_contours, contours 
 
+
 def find_contours_of_xml_label(file_path_xml, level_scale):
 
     list_blob = []
@@ -93,14 +95,17 @@ def find_contours_of_xml_label(file_path_xml, level_scale):
                         p_y = p_y * level_scale[1]
                         list_point.append([p_x, p_y])
                     if len(list_point):
-                        list_blob.append(np.array(list_point, dtype=np.int32))
+                        list_blob.append(list_point)
 
     contours = []
     for list_point in list_blob:
-        list_point_int = [[int(round(point[0])), int(round(point[1]))] \
+        list_point_int = [[[int(round(point[0])), int(round(point[1]))]] \
                             for point in list_point]
         contour = np.array(list_point_int, dtype=np.int32)
         contours.append(contour)
+
+    #contours = [np.array([[[4000, 4000]], [[6000, 6000]], [[4000, 6000]]], dtype=np.int32),
+    #            np.array([[[2000, 2000]],[[2000, 5000,]],[[5000, 5000]]], dtype=np.int32)]
 
 
     return contours 
@@ -109,8 +114,8 @@ def find_contours_of_xml_label(file_path_xml, level_scale):
 def draw_contours_of_label_on_wsi(wsi_bin, contours_label):
     pass
 
-     
 
+     
 
 def process():
     # Tissue region segmentation.
@@ -118,9 +123,17 @@ def process():
     #   2. Convert tif to opencv image.
     #   3. Otsu's thresholding.
     #   4. Save the complete image.
+    #   => Problem : need more accuracy thresholding.
     # Extract contours of tissue region.
-    # Draw contours on image and fill the contours.
+    #
+    # (1)O contour -> bounding box
+    # (2)X contour -> fill contours -> all coordinates
+    #   1. np.nonzero
+    #   2. np.ndarray.flatten
+    #   3.
     # Extract patches on the contours. 
+    #   0. Consider image_thresholded : At 40x (level 0),
+    #                           patch : At 20x (level 1)
     #   1. At 20x 
     #   2. Size 960 x 960
     #   3. Pick a point randomly in the contours.
@@ -130,11 +143,33 @@ def process():
     #     
     pass
 
+
+def find_max_contour_in_contours(contours):
+
+    max_contour_index = [-1, -1, -1, -1, -1]
+
+    max_contour_index[0] = -1
+    max_contour_size = -1
+    for c_index, contour in enumerate(contours):
+        size = contour.shape[0]
+        if size > max_contour_size:
+            max_contour_size = size
+            max_contour_index[0] = c_index
+
+    max_contour_size = -1
+    for c_index, contour in enumerate(contours):
+        size = contour.shape[0]
+        if size > max_contour_size and c_index != max_contour_index[0] :
+            max_contour_size = size
+            max_contour_index[1] = c_index
+
+    return contours[max_contour_index[1]]
+
 def test():
     file_path = "./data/patient_099_node_4.tif"
     file_path_xml = "./data/patient_099_node_4.xml"
     level = 4
-    level_scale = get_level_scale_from_file_path(file_path, level)
+    level_scale = get_level_scale_from_file_path_tif(file_path, level)
 
     wsi_pil = load_WSI_from_tif_file_path(file_path, level)
     wsi_bgr = convert_wsi_pil_to_wsi_bgr(wsi_pil)
@@ -142,30 +177,36 @@ def test():
     wsi_bin_uint8 = get_otsu_thresholding_image(wsi_gray)
     _, contours = find_and_draw_contours_of_tissue_region(wsi_bin_uint8) 
     wsi_with_contours = wsi_bgr.copy() 
+
     cv2.drawContours(wsi_with_contours, contours, -1, (0,255,0), 3)
 
-    wsi_with_label_contours = wsi_bgr.copy()
+    max_contour = find_max_contour_in_contours(contours) 
+
+    wsi_with_max_contour = wsi_bgr.copy()
+    cv2.drawContours(wsi_with_max_contour, [max_contour], 0, (0,255,0), -1)
+
+    wsi_with_bounding_box = wsi_bgr.copy()
+    #rect = cv2.minAreaRect(max_contour)
+    #box = cv2.boxPoints(rect)
+    #box = np.int32(box)
+    #cv2.drawContours(wsi_with_bounding_box, [box], 0, (0, 0, 255), 2)
+    x, y, w, h = cv2.boundingRect(max_contour)
+    cv2.rectangle(wsi_with_bounding_box, (x,y), (x+w, y+h), (0, 0, 255), 2)
+
+
     contours_label = find_contours_of_xml_label(file_path_xml, level_scale)
-
-    print(contours[0].shape)
-    print(contours_label[0].shape)
      
-    cv2.drawContours(wsi_with_label_contours, contours_label, -1, (0,255,0), 3)
+    wsi_with_label = wsi_bgr.copy()
+    cv2.drawContours(wsi_with_label, contours_label, 0, (0,255,0), -1)
 
-    plt.subplot(2, 3, 1), plt.imshow(wsi_bgr)
+    x, y, w, h = cv2.boundingRect(contours_label[0])
+    cv2.rectangle(wsi_with_label, (x,y), (x+w, y+h), (0,0,255), 2)
+
+    plt.subplot(1, 2, 1), plt.imshow(wsi_bgr)
     plt.title("wsi_bgr"), plt.xticks([]), plt.yticks([])
-    
-    plt.subplot(2, 3, 2), plt.imshow(wsi_gray, 'gray')
-    plt.title("wsi_gray"), plt.xticks([]), plt.yticks([])
 
-    plt.subplot(2, 3, 3), plt.imshow(wsi_bin_uint8, 'gray')
-    plt.title("wsi_bin"), plt.xticks([]), plt.yticks([])
-
-    plt.subplot(2, 3, 4), plt.imshow(wsi_with_contours)
-    plt.title("wsi_contours"), plt.xticks([]), plt.yticks([])
-
-    plt.subplot(2, 3, 5), plt.imshow(wsi_with_label_contours)
-    plt.title("wsi_label_contours"), plt.xticks([]), plt.yticks([])
+    plt.subplot(1, 2, 2), plt.imshow(wsi_with_label)
+    plt.title("wsi_label"), plt.xticks([]), plt.yticks([])
 
     plt.show()
 
