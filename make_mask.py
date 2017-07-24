@@ -51,9 +51,11 @@ def run(file_path, location_path, level, padding):
         wsi_bgr_lv_ = cv2.cvtColor(wsi_ary_lv_, cv2.COLOR_RGBA2BGR)
 
 ### Remove black region.
+    """
     wsi_bgr_lv_sum = np.sum(wsi_bgr_lv_, 2)
     wsi_criterion = (wsi_bgr_lv_sum / 3) < 38
     wsi_bgr_lv_[wsi_criterion] = np.array([255, 255, 255])
+    """
 
     
 ### Visualizing
@@ -172,10 +174,20 @@ if __name__=='__main__':
 
     file_path_tif = \
     "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Tumor/" 
+    file_path_normal = \
+    "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Normal/" 
     file_path_ground_truth_tif = \
     "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Ground_Truth/Mask/" 
+
+    save_location_path_origin_lv_4 = \
+    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/"
+    save_location_path_origin_normal_lv_4 = \
+    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_16_Normal/"
     save_location_path_mask_lv_4 = \
     "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Tumor/"
+    save_location_path_mask_normal_lv_4 = \
+    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Normal/"
+
     save_location_path_mask_lv_7 = \
     "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_7/"
     save_location_path_cutting_lv_7 = \
@@ -185,8 +197,6 @@ if __name__=='__main__':
     save_location_path_ground = \
     "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_Ground_Truth_lv_4/"
 
-    list_file_name = [f for f in listdir(file_path_tif)]
-    list_file_name.sort()
     
 #    file_name = list_file_name[0]
 #    cur_file_path = file_path_tif + file_name 
@@ -233,15 +243,39 @@ if __name__=='__main__':
     exit()
     """
 
-### Save tissue region mask lv_4 
+
+### Save origin slide bgr lv 4 
+    """
+    list_file_name = [f for f in listdir(file_path_normal)]
+    list_file_name.sort()
     level = 4
     for i, file_name in enumerate(list_file_name):
-        cur_file_path = file_path_tif + file_name 
+        cur_file_path = file_path_normal + file_name
+        file_name = file_name.lower()
+        file_name = file_name.replace('.tif', '')
+        file_name = file_name + '_origin_lv_' + str(level) + '.jpg'
+        # check if correct path
+        cur_save_loca = save_location_path_origin_normal_lv_4 + file_name 
+
+        save_slide_as_jpg_with_level(cur_file_path, cur_save_loca, level)
+#        if i == 0: break
+    exit()
+    """
+    
+
+### Save tumor slide tissue region mask lv_4 
+    """
+    list_file_name = [f for f in listdir(file_path_normal)]
+    list_file_name.sort()
+
+    level = 4
+    for i, file_name in enumerate(list_file_name):
+        cur_file_path = file_path_normal + file_name 
         file_name = file_name.lower()
         file_name = file_name.replace('.tif', '')
         file_name = file_name + '_tissue_mask_lv_' + str(level) + '.jpg'
         # check if correct path
-        cur_save_loca = save_location_path_mask_lv_4 + file_name 
+        cur_save_loca = save_location_path_mask_normal_lv_4 + file_name 
 #        img = cv2.imread(cur_save_loca, 0)
 #        if img is not None:
 #            continue
@@ -254,9 +288,34 @@ if __name__=='__main__':
 
         run(cur_file_path, cur_save_loca, level, padding)
         if i == 1: break
+    exit()
+    """
 
 
 
+### Save normal slide tissue region mask lv_4 
+    list_file_name = [f for f in listdir(file_path_normal)]
+    list_file_name.sort()
+
+    level = 4
+    for i, file_name in enumerate(list_file_name):
+        cur_file_path = file_path_normal + file_name 
+        file_name = file_name.lower()
+        file_name = file_name.replace('.tif', '')
+        file_name = file_name + '_tissue_mask_lv_' + str(level) + '.jpg'
+        # check if correct path
+        cur_save_loca = save_location_path_mask_normal_lv_4 + file_name 
+#        img = cv2.imread(cur_save_loca, 0)
+#        if img is not None:
+#            continue
+#
+#        print(cur_file_path)
+#        print(cur_save_loca)
+#        print('\n')
+        padding = False 
+
+        run(cur_file_path, cur_save_loca, level, padding)
+#        if i == 0: break
 
 
 
