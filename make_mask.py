@@ -10,7 +10,7 @@ from skimage.transform.integral import integral_image
 from openslide import OpenSlide
 #from openslide import open_slide
 from matplotlib import pyplot as plt
-from xml.etree.ElementTree import parse
+#from xml.etree.ElementTree import parse
 
 
 def make_mask(mask_shape, contours):
@@ -98,7 +98,7 @@ def run(file_path, location_path, level, padding):
 ### Morphology
     
     kernel_o = np.ones((2,2), dtype=np.uint8)
-    kernel_c = np.ones((5,5), dtype=np.uint8)
+    kernel_c = np.ones((4,4), dtype=np.uint8)
     wsi_bin_0255_lv_ = cv2.morphologyEx( \
             wsi_bin_0255_lv_, \
             cv2.MORPH_CLOSE, \
@@ -172,7 +172,7 @@ def save_slide_cutting(file_path, save_location, level):
 
 if __name__=='__main__':
 
-    file_path_tif = \
+    file_path_tumor = \
     "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Tumor/" 
     file_path_normal = \
     "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Normal/" 
@@ -183,7 +183,7 @@ if __name__=='__main__':
     "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/"
     save_location_path_origin_normal_lv_4 = \
     "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_16_Normal/"
-    save_location_path_mask_lv_4 = \
+    save_location_path_mask_tumor_lv_4 = \
     "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Tumor/"
     save_location_path_mask_normal_lv_4 = \
     "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Normal/"
@@ -264,32 +264,23 @@ if __name__=='__main__':
     
 
 ### Save tumor slide tissue region mask lv_4 
-    """
-    list_file_name = [f for f in listdir(file_path_normal)]
+    list_file_name = [f for f in listdir(file_path_tumor)]
     list_file_name.sort()
 
     level = 4
     for i, file_name in enumerate(list_file_name):
-        cur_file_path = file_path_normal + file_name 
+        cur_file_path = file_path_tumor + file_name 
         file_name = file_name.lower()
         file_name = file_name.replace('.tif', '')
         file_name = file_name + '_tissue_mask_lv_' + str(level) + '.jpg'
         # check if correct path
-        cur_save_loca = save_location_path_mask_normal_lv_4 + file_name 
-#        img = cv2.imread(cur_save_loca, 0)
-#        if img is not None:
-#            continue
-#
-#        print(cur_file_path)
-#        print(cur_save_loca)
-#        print('\n')
+        cur_save_loca = save_location_path_mask_tumor_lv_4 + file_name 
         padding = True
         if i >= 70: padding = False 
 
         run(cur_file_path, cur_save_loca, level, padding)
-        if i == 1: break
+#        if i == 0: break
     exit()
-    """
 
 
 
@@ -305,15 +296,8 @@ if __name__=='__main__':
         file_name = file_name + '_tissue_mask_lv_' + str(level) + '.jpg'
         # check if correct path
         cur_save_loca = save_location_path_mask_normal_lv_4 + file_name 
-#        img = cv2.imread(cur_save_loca, 0)
-#        if img is not None:
-#            continue
-#
-#        print(cur_file_path)
-#        print(cur_save_loca)
-#        print('\n')
-        padding = False 
 
+        padding = False 
         run(cur_file_path, cur_save_loca, level, padding)
 #        if i == 0: break
 

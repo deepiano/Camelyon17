@@ -140,22 +140,23 @@ if __name__=='__main__':
         slide_file_path_origin = file_path_origin_lv_4 + file_name_origin
         slide_file_path_mask = file_path_mask_lv_4 + file_name_mask
         run(slide_file_path_origin, slide_file_path_mask, cur_save_loca)
+#        if i == 0 : break
     exit()
     """
 
     
-### Merge tumor origin and tissue mask lv_4 and Save
-    """ 
+### Generate tiled tif tumor 
     list_merge_file_name = [f for f in listdir(save_location_path_merge)]
     list_merge_file_name.sort()
 
     for i in range(len(list_merge_file_name)):
        
+        first_word = list_merge_file_name[i].split('_')[0]
+        if first_word == 'normal': continue 
         fn_img = save_location_path_merge + list_merge_file_name[i] 
         generate_tiled_tif(fn_img, postfix=None)
-        if i==0: break
-    """
-
+#        if i==0: break
+    exit()
 
 
 
@@ -180,8 +181,8 @@ if __name__=='__main__':
     """
 
     
-### Merge Normal origin and tissue mask lv_4 and Save
-
+### Generate tiled tif normal 
+    """
     list_merge_file_name = [f for f in listdir(save_location_path_merge)]
     list_merge_file_name.sort()
 
@@ -191,6 +192,7 @@ if __name__=='__main__':
         fn_img = save_location_path_merge + list_merge_file_name[i]
         generate_tiled_tif(fn_img, postfix=None)
 #        if i==0: break
+    """
 
 ### pipe tar across an ssh session shell script 
 #$ tar czf - <files> | ssh user@host "cd /wherever && tar xvzf -"
