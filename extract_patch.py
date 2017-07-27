@@ -56,7 +56,6 @@ def visualize_one(img):
     cv2.waitKey()
     cv2.destroyAllWindows()
 
-
 def extract_patch_from_label_mask_at_x20 \
         (file_path, file_path_xml, size_patch): 
 
@@ -325,7 +324,7 @@ def extract_patch_from_label_mask_at_x20 \
 
 
 
-def test():
+def main():
     file_path = "./data/patient_099_node_4.tif"
     file_path_xml = "./data/patient_099_node_4.xml"
     #wsi_tif = OpenSlide(file_path)
@@ -333,64 +332,11 @@ def test():
     #level = 4
     #level_scale = get_level_scale_from_file_path_tif(file_path, level)
     size_patch = 960
-    """ 
-    wsi_pil = load_WSI_from_tif_file_path(file_path, level)
-    wsi_bgr = convert_wsi_pil_to_wsi_bgr(wsi_pil)
-    wsi_gray = convert_wsi_bgr_to_wsi_gray(wsi_bgr)
-    wsi_bin_uint8 = get_otsu_thresholding_image(wsi_gray)
-    _, contours = find_and_draw_contours_of_tissue_region(wsi_bin_uint8) 
-    wsi_with_contours = wsi_bgr.copy() 
-
-    cv2.drawContours(wsi_with_contours, contours, -1, (0,255,0), 3)
-
-    max_contour = find_max_contour_in_contours(contours) 
-
-    wsi_with_max_contour = wsi_bgr.copy()
-    cv2.drawContours(wsi_with_max_contour, [max_contour], 0, (0,255,0), -1)
-
-    wsi_with_bounding_box = wsi_bgr.copy()
-    #rect = cv2.minAreaRect(max_contour)
-    #box = cv2.boxPoints(rect)
-    #box = np.int32(box)
-    #cv2.drawContours(wsi_with_bounding_box, [box], 0, (0, 0, 255), 2)
-    x, y, w, h = cv2.boundingRect(max_contour)
-    cv2.rectangle(wsi_with_bounding_box, (x,y), (x+w, y+h), (0, 0, 255), 2)
-
-    contours_label = find_contours_of_xml_label(file_path_xml, level_scale)
-    #print ('coord contours :')
-    #for c in contours_label:
-    #    print (c[0][0][0], c[0][0][1])
-     
-    wsi_with_label = wsi_bgr.copy()
-    cv2.drawContours(wsi_with_label, contours_label, 0, (0,255,0), -1)
-
-    x2, y2, w2, h2 = cv2.boundingRect(contours_label[0])
-    cv2.rectangle(wsi_with_label, (x2,y2), (x2+w2, y2+h2), (0,0,255), 5)
-    
-    #wsi_label_mask = make_label_mask(dimension_level_4, contours_label)
-    wsi_label_mask = make_label_mask(wsi_bgr.shape, contours_label)
-    """
 
     extract_patch_from_label_mask_at_x20 \
         (file_path, file_path_xml, size_patch)
 
-    #plt.subplot(1, 2, 1), plt.imshow(wsi_bgr)
-    #plt.title("wsi_bgr"), plt.xticks([]), plt.yticks([])
 
-    #plt.subplot(1, 1, 1), plt.imshow(wsi_with_label)
-    #plt.title("wsi_label"), plt.xticks([]), plt.yticks([])
-    #plt.subplot(1, 2, 1), plt.imshow(wsi_label_mask, 'gray')
-    #plt.title("wsi_label_mask"), plt.xticks([]), plt.yticks([])
-
-    #plt.subplot(1, 1, 1), plt.imshow(wsi_label_mask, 'gray')
-    #plt.title("wsi_label_mask"), plt.xticks([]), plt.yticks([])
-
-    #plt.show()
-    """
-    cv2.imshow("wsi_label", wsi_with_label)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
-    """
 
 if __name__=="__main__":
-    test()
+    main()

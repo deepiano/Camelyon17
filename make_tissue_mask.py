@@ -13,6 +13,49 @@ from matplotlib import pyplot as plt
 #from xml.etree.ElementTree import parse
 
 
+file_path_tumor = \
+"/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Tumor/" 
+file_path_normal = \
+"/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Normal/" 
+file_path_ground_truth_tif = \
+"/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Ground_Truth/Mask/" 
+
+save_location_path_origin_lv_4 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/"
+save_location_path_origin_normal_lv_4 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_16_Normal/"
+save_location_path_mask_tumor_lv_4 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Tumor/"
+save_location_path_mask_normal_lv_4 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Normal/"
+
+save_location_path_mask_lv_7 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_7/"
+save_location_path_cutting_lv_7 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_cutting_lv_7/"
+save_location_path_cutting_lv_4 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_cutting_lv_4/"
+save_location_path_ground = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_Ground_Truth_lv_4/"
+
+### Camelyon17 path
+file_path_slide_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/camelyon17/training/"
+file_path_normal_slide_17 = \
+""
+file_path_ground_truth_xml_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/camelyon17/training/lesion_annotations/"
+
+save_location_path_origin_tumor_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_17_Tumor/"
+save_location_path_origin_normal_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_17_Normal/"
+save_location_path_tumor_tissue_mask_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_17_Tumor/"
+save_location_path_normal_tissue_mask_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_17_Normal/"
+
+
 def make_mask(mask_shape, contours):
 
     wsi_empty = np.zeros(mask_shape[:2])
@@ -22,8 +65,7 @@ def make_mask(mask_shape, contours):
     return wsi_empty 
 
 
-def run(file_path, location_path, level, padding):
-
+def run(file_path, location_path, level, padding, camel_17):
     slide = OpenSlide(file_path)
     
     print('==> making contours of tissue region..')
@@ -49,6 +91,10 @@ def run(file_path, location_path, level, padding):
                 slide.level_dimensions[level])
         wsi_ary_lv_ = np.array(wsi_pil_lv_)
         wsi_bgr_lv_ = cv2.cvtColor(wsi_ary_lv_, cv2.COLOR_RGBA2BGR)
+
+    if camel_17:
+        wsi_bgr_lv_black = (wsi_bgr_lv_ == 0)
+        wsi_bgr_lv_[wsi_bgr_lv_black] = 255
 
 ### Remove black region.
     """
@@ -170,45 +216,71 @@ def save_slide_cutting(file_path, save_location, level):
 #    plt.xticks([]), plt.yticks([])
 #    plt.show()
 
-if __name__=='__main__':
-
-    file_path_tumor = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Tumor/" 
-    file_path_normal = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Normal/" 
-    file_path_ground_truth_tif = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Ground_Truth/Mask/" 
-
-    save_location_path_origin_lv_4 = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/"
-    save_location_path_origin_normal_lv_4 = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_16_Normal/"
-    save_location_path_mask_tumor_lv_4 = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Tumor/"
-    save_location_path_mask_normal_lv_4 = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_16_Normal/"
-
-    save_location_path_mask_lv_7 = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_7/"
-    save_location_path_cutting_lv_7 = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_cutting_lv_7/"
-    save_location_path_cutting_lv_4 = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_cutting_lv_4/"
-    save_location_path_ground = \
-    "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_Ground_Truth_lv_4/"
-
+def is_tumor_slide(cur_file_name, list_file_name_xml):
     
-#    file_name = list_file_name[0]
-#    cur_file_path = file_path_tif + file_name 
-#    file_name = file_name.lower()
-#    file_name = file_name.replace('.tif', '')
-#    file_name = file_name + '_tissue_mask.jpg'
-#    cur_save_loca = save_location_path + file_name 
-#    print(cur_file_path)
-#    print(cur_save_loca)
-#    print('\n')
-#    run(cur_file_path, cur_save_loca)
-#    exit()
+    cur_file_name = cur_file_name.split('.')[0]
+    
+    for i, file_name_xml in enumerate(list_file_name_xml):
+        file_name_xml = file_name_xml.split('.')[0]
+        if cur_file_name == file_name_xml:
+            return True 
+
+    return False 
+
+
+
+def save_origin_slide(file_path, save_location, list_file_name_xml, save_tumor):
+
+    list_file_name = [f for f in listdir(file_path)]
+    list_file_name.sort()
+    level = 4
+    for i, file_name in enumerate(list_file_name):
+        
+        if save_tumor:
+            if (is_tumor_slide(file_name, list_file_name_xml) == False):
+                continue
+        else:
+            if (is_tumor_slide(file_name, list_file_name_xml)):
+                continue
+
+        cur_file_path = file_path + file_name
+        file_name = file_name.lower()
+        file_name = file_name.replace('.tif', '')
+        file_name = file_name + '_origin_lv_' + str(level) + '.jpg'
+        # check if correct path
+        cur_save_loca = save_location + file_name 
+        save_slide_as_jpg_with_level(cur_file_path, cur_save_loca, level)
+#        if i == 0: break
+
+
+def save_tissue_mask(file_path, save_location, list_file_name_xml, save_tumor):
+
+    list_file_name = [f for f in listdir(file_path)]
+    list_file_name.sort()
+
+    level = 4
+    for i, file_name in enumerate(list_file_name):
+
+        if save_tumor:
+            if (is_tumor_slide(file_name, list_file_name_xml) == False):
+                continue
+        else:
+            if (is_tumor_slide(file_name, list_file_name_xml) == True):
+                continue
+
+        cur_file_path = file_path+ file_name 
+        file_name = file_name.lower()
+        file_name = file_name.replace('.tif', '')
+        file_name = file_name + '_tissue_mask_lv_' + str(level) + '.jpg'
+        # check if correct path
+        cur_save_loca = save_location + file_name 
+        padding = False 
+        camel_17 = True
+        run(cur_file_path, cur_save_loca, level, padding, camel_17)
+#        if i == 0: break
+
+
+if __name__=='__main__':
 
 ### Save origin slide with padding lv 4 (No.1 ~ 70)
     """
@@ -243,27 +315,47 @@ if __name__=='__main__':
     exit()
     """
 
+### Camelyon 17
 
-### Save origin slide bgr lv 4 
+    list_file_name_xml = \
+            [f for f in listdir(file_path_ground_truth_xml_17)] 
+
+### Save normal origin slide bgr lv 4 -Camelyon17
     """
-    list_file_name = [f for f in listdir(file_path_normal)]
-    list_file_name.sort()
-    level = 4
-    for i, file_name in enumerate(list_file_name):
-        cur_file_path = file_path_normal + file_name
-        file_name = file_name.lower()
-        file_name = file_name.replace('.tif', '')
-        file_name = file_name + '_origin_lv_' + str(level) + '.jpg'
-        # check if correct path
-        cur_save_loca = save_location_path_origin_normal_lv_4 + file_name 
-
-        save_slide_as_jpg_with_level(cur_file_path, cur_save_loca, level)
-#        if i == 0: break
+    for i in range(5):
+        file_path = file_path_slide_17 + 'centre_' + str(i) +'/'
+        save_origin_slide(file_path, save_location_path_origin_normal_17, \
+                            list_file_name_xml, False)
     exit()
     """
     
+### Save tumor -
+    """
+    for i in range(5):
+        file_path = file_path_slide_17 + 'centre_' + str(i) +'/'
+        save_origin_slide(file_path, save_location_path_origin_tumor_17, \
+                            list_file_name_xml, True)
+    exit()
+    """
 
-### Save tumor slide tissue region mask lv_4 
+    """
+### Save normal tissue mask -Camelyon17
+    for i in range(5):
+        file_path = file_path_slide_17 + 'centre_' + str(i) +'/'
+        save_tissue_mask(file_path, save_location_path_normal_tissue_mask_17, \
+                            list_file_name_xml, False)
+    exit()
+    """
+
+
+### Save turmor -
+    for i in range(5):
+        file_path = file_path_slide_17 + 'centre_' + str(i) +'/'
+        save_tissue_mask(file_path, save_location_path_tumor_tissue_mask_17, \
+                            list_file_name_xml, True)
+    exit()
+
+## Save tumor slide tissue region mask lv_4 
     list_file_name = [f for f in listdir(file_path_tumor)]
     list_file_name.sort()
 
@@ -300,7 +392,6 @@ if __name__=='__main__':
         padding = False 
         run(cur_file_path, cur_save_loca, level, padding)
 #        if i == 0: break
-
 
 
 
