@@ -16,8 +16,7 @@ from matplotlib import pyplot as plt
 from xml.etree.ElementTree import parse
 
 
-### File path -Camelyon16
-
+# File path -Camelyon16
 file_path_tif_of_tumor_slide_16 = \
 "/mnt/nfs/kyuhyoung/pathology/breast/camelyon16/TrainingData/Train_Tumor"
 file_path_tif_of_normal_slide_16 = \
@@ -32,7 +31,23 @@ file_path_jpg_of_tumor_slide_16  = \
 "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_16_Tumor"
 file_path_jpg_of_normal_slide_16  = \
 "/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_16_Normal"
-save_location_path_patch_16 = \
+
+# File path -Camelyon17
+file_path_tif_17= \
+"/mnt/nfs/kyuhyoung/pathology/breast/camelyon17/training"
+file_path_xml_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/camelyon17/training/lesion_annotations"
+file_path_tis_msk_of_tumor_slide_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_17_Tumor"
+file_path_tis_msk_of_normal_slide_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_tissue_mask_lv_4/Train_17_Normal"
+file_path_jpg_of_tumor_slide_17 = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_17_Tumor"
+file_path_jpg_of_normal_slide_17  = \
+"/mnt/nfs/kyuhyoung/pathology/breast/bong/Slide_origin_lv_4/Train_17_Normal"
+
+# Patch save location
+save_location_path_patch = \
 "/mnt/nfs/kyuhyoung/pathology/breast/bong/Train_patch_input"
 
 
@@ -72,7 +87,7 @@ def get_list_file_name(path_directory):
     return file_name_list
 
 
-def extract_patch(
+def extract_patch_on_slide(
             file_path_tif, \
             file_path_xml, \
             file_path_tis_mask, \
@@ -134,9 +149,10 @@ def extract_patch(
                     contours_tissue, -1, (255, 0, 0), 2)
     
     # Make csv_writer
-    csv_file = open(save_location_path_patch_position_csv, 'wt')
-    csv_writer = csv.writer(csv_file)
-    csv_writer.writerow( ('X', 'Y') )
+    csv_file = open(save_location_path_patch_position_csv, 'w')
+    fieldnames = ['X', 'Y']
+    csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    csv_writer.writeheader()
 
     print('==> Extracting patches randomly on tissue region...')
     patch_cnt = 0
@@ -151,8 +167,8 @@ def extract_patch(
             continue
         
         # Determine number of patches to extract
-        number_patches = int(round(area / area_patch_lv_4 * 20))
-        #number_patches = min(10000, number_patches)
+        number_patches = int(round(area / area_patch_lv_4 * 1.5))
+        number_patches = min(960, number_patches)
 #        print('contour area : ', area, ' num_patch : ', number_patches) 
 
         # Get coordinates of contour (level : 4)
@@ -183,6 +199,7 @@ def extract_patch(
         random_index_x = np.random.choice(len_x, number_patches, replace=False)
         random_index_y = np.random.choice(len_y, number_patches, replace=True)
 
+
         for i in range(number_patches):
 
             patch_x = candidate_x[random_index_x[i]] 
@@ -201,13 +218,13 @@ def extract_patch(
                                      patch_y + size_patch_lv_4 - 1))
             tissue_ratio = tissue_integral / (size_patch_lv_4 ** 2)
 
-            if tissue_ratio < 0.8:
+            if tissue_ratio < 0.9:
                 continue
 
             # Save patches position to csv file. 
             patch_x_lv_0 = int(round(patch_x * downsample))
             patch_y_lv_0 = int(round(patch_y * downsample))
-            csv_writer.writerow((patch_x_lv_0, patch_y_lv_0))
+            csv_writer.writerow({'X':patch_x_lv_0, 'Y':patch_y_lv_0})
             patch_cnt += 1
 
             # Draw patch position (color : Green)
@@ -217,7 +234,8 @@ def extract_patch(
                             (0, 255, 0),\
                             thickness=1)
 
-    print('patch_cnt: ', patch_cnt)
+    print('slide    :\t', file_path_tif) 
+    print('patch_cnt:\t', patch_cnt)
 
     # Save visualizing image.
     cv2.imwrite(save_location_path_patch_position_visualize,\
@@ -226,13 +244,12 @@ def extract_patch(
     csv_file.close()
 
 
-def extract_patch_on_slide(\
+def extract_patch(\
         file_path_tif,\
         file_path_xml,\
         file_path_tis_msk,\
         file_path_jpg,\
-        save_location_path_patch,\
-        is_tumor_slide):
+        save_location_path_patch):
 
     size_patch = 960
     
@@ -243,13 +260,24 @@ def extract_patch_on_slide(\
     
     for index in range(len(file_name_list_tif)):
 
+        cur_slide_name = file_name_list_tif[index].split('.')[0]
+
+        is_tumor_slide = False
+        cur_path_xml = None
+
+        if index < len(file_name_list_xml):
+            cur_xml_name = file_name_list_xml[index].split('.')[0]
+            if cur_xml_name == cur_slide_name:
+                is_tumor_slide = True
+                cur_xml_name = cur_xml_name + '.xml'
+                cur_path_xml = os.path.join(file_path_xml, cur_xml_name)
+
         cur_path_tif = os.path.join(file_path_tif, file_name_list_tif[index])
-        cur_path_xml = os.path.join(file_path_xml, file_name_list_xml[index])
+
         cur_path_tis_msk = os.path.join(file_path_tis_msk, 
                                         file_name_list_tis_msk[index])
         cur_path_jpg = os.path.join(file_path_jpg, file_name_list_jpg[index])
 
-        cur_slide_name = file_name_list_tif[index].split('.')[0]
         cur_save_dir = os.path.join(\
                 save_location_path_patch, cur_slide_name)
 
@@ -266,7 +294,7 @@ def extract_patch_on_slide(\
                 os.path.join(cur_save_dir,\
                             cur_csv_file_name )
 
-        extract_patch(  
+        extract_patch_on_slide(  
                 cur_path_tif, \
                 cur_path_xml, \
                 cur_path_tis_msk, \
@@ -280,20 +308,42 @@ def extract_patch_on_slide(\
 
 def main():
 
-    extract_patch_on_slide(\
-        file_path_tif_of_tumor_slide_16,\
-        file_path_xml_16,\
-        file_path_tis_msk_of_tumor_slide_16,\
-        file_path_jpg_of_tumor_slide_16,\
-        save_location_path_patch_16,
-        is_tumor_slide=True)
-    extract_patch_on_slide(\
-        file_path_tif_of_normal_slide_16,\
-        file_path_xml_16,\
-        file_path_tis_msk_of_normal_slide_16,\
-        file_path_jpg_of_normal_slide_16,\
-        save_location_path_patch_16,
-        is_tumor_slide=False)
+    # Camelyon16
+#    extract_patch(\
+#        file_path_tif_of_tumor_slide_16,\
+#        file_path_xml_16,\
+#        file_path_tis_msk_of_tumor_slide_16,\
+#        file_path_jpg_of_tumor_slide_16,\
+#        save_location_path_patch)
+#    extract_patch(\
+#        file_path_tif_of_normal_slide_16,\
+#        file_path_xml_16,\
+#        file_path_tis_msk_of_normal_slide_16,\
+#        file_path_jpg_of_normal_slide_16,\
+#        save_location_path_patch)
+#    exit()
+
+    # Camelyon17
+    for i in range(5):
+        dir_name = 'centre_' + str(i)
+        cur_file_path_tif = os.path.join(file_path_tif_17, dir_name)  
+
+        extract_patch(\
+            cur_file_path_tif,\
+            file_path_xml_17,\
+            file_path_tis_msk_of_tumor_slide_17,\
+            file_path_jpg_of_tumor_slide_17,\
+            save_location_path_patch_17)
+
+        extract_patch(\
+            cur_file_path_tif,\
+            file_path_xml_17,\
+            file_path_tis_msk_of_normal_slide_17,\
+            file_path_jpg_of_normal_slide_17,\
+            save_location_path_patch_17)
+
 
 if __name__=="__main__":
     main()
+
+
