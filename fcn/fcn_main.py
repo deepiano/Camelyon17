@@ -1,3 +1,4 @@
+import pdb
 import os
 import os.path as osp
 
@@ -13,8 +14,7 @@ def main():
         torch.cuda.manual_seed(1337)
  
     # 1. dataset
-    root = osp.expanduser('~/Camelyon17/fcn')
-    print(root)
+    root = osp.expanduser('~/TeamProject/Camelyon17/fcn')
     train_dataset = fcn_datasets.FCNDataset(root, split='train', transform=True)
  
     train_loader = torch.utils.data.DataLoader(train_dataset,\
@@ -24,7 +24,8 @@ def main():
     for i, (input, target) in enumerate(train_loader):
         print(i)
         print(input)
-        print(train_dataset.untransform(input,target))
+        print(target)
+        
 
 if __name__=='__main__':
    main()

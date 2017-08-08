@@ -49,11 +49,10 @@ class FCNDataset(Dataset):
         img = img[:, :, 0:3] # RGBA -> RGB
         # load label
         lbl_file = data_file['lbl']
-        print(lbl_file)
         lbl = PIL.Image.open(lbl_file)
-        pdb.set_trace()
+        lbl = lbl.convert('RGB')
         lbl = np.array(lbl, dtype=np.int32)
-        lbl[lbl == 255] = -1 # Why?
+        # lbl[lbl == 255] = -1 # Why?
         if self._transform:
             return self.transform(img, lbl)
         else:
@@ -66,15 +65,16 @@ class FCNDataset(Dataset):
         img -= self.mean_bgr
         img = img.transpose(2, 0, 1)
         img = torch.from_numpy(img).float()
+
         pdb.set_trace()
-        lbl = torch.from_numpy(lbl).long()
+        lbl = lbl[:, :, ::-1] # RGB -> BGR
+        lbl = lbl.transpose(2, 0, 1)
+        lbl = torch.from_numpy(lbl.copy()).long()
         return img, lbl
 
 
     def untransform(self, img, lbl):
         img = img.numpy()
-        pdb.set_trace()
-        print(img)
         img = img.transpose(1, 2, 0)
         img += self.mean_bgr
         img = img.astype(np.uint8)
